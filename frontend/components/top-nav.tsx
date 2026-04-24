@@ -1,7 +1,12 @@
-import { Bell, User } from 'lucide-react'
+'use client'
+
+import { UserButton } from '@clerk/nextjs'
+import { Bell, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 
 export function TopNav() {
+  const router = useRouter()
   return (
     <header className="border-b border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
@@ -17,9 +22,10 @@ export function TopNav() {
               <Bell className="h-5 w-5" />
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive"></span>
             </Button>
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={() => router.push('/settings')}>
+              <Settings className="h-5 w-5" />
             </Button>
+            <UserButton />
           </div>
         </div>
       </div>
