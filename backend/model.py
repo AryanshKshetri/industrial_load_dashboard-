@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import timedelta
 from utils import add_features, clean_data
+from datetime import datetime
 
 def load_model(model_path, features_path):
     """
@@ -21,7 +22,7 @@ def predict_future(df, model, features, hours=24):
     # Work on a copy, keep enough history for lag features
     temp_df = df.tail(170).copy().reset_index(drop=True)
     predictions = []
-    last_datetime = temp_df["datetime"].iloc[-1]
+    last_datetime = datetime.now().replace(minute=0, second=0, microsecond=0)
 
     for i in range(hours):
         # Next timestamp
