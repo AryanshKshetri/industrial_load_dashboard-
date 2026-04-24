@@ -1,3 +1,6 @@
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Security
+import httpx 
 from database import save_prediction, get_recent_predictions
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +13,7 @@ import pandas as pd
 import numpy as np
 import io
 import os
+from database import save_prediction, get_recent_predictions, get_user_settings, save_user_settings 
 
 from utils import validate_csv, clean_data
 from model import load_model, predict_next_24h, predict_next_week
@@ -69,7 +73,8 @@ def health_check(request: Request):
 async def predict(
     request: Request,
     file: UploadFile = File(...),
-    contract_demand: float = Form(...)
+    contract_demand: float = Form(...),
+    user_id: str = Form(default="anonymous") 
 ):
     """
     Accepts CSV file + contract demand value.
@@ -135,8 +140,9 @@ async def predict(
         next_day_prediction=next_day_avg,
         next_week_prediction=next_week_preds,
         status=status,
-        alert_message=alert_message
-    )
+        alert_message=alert_message,
+        user_id=user_id
+    ) 
     return PredictionResponse(
         next_day_prediction=next_day_avg,
         next_week_prediction=next_week_preds,
@@ -146,7 +152,27 @@ async def predict(
     )
 @app.get("/predictions")
 @limiter.limit("30/minute")
-def get_predictions(request: Request):
+def get_predictions(request: Request,user_id: str = "anonymous"):
     """Returns recent predictions from database"""
-    predictions = get_recent_predictions(limit=10)
+    predictions = get_recent_predictions(limit=10,user_id=user_id)
     return predictions
+
+@app.get("/settings")
+@limiter.limit("30/minute")
+def get_settings(request: Request, user_id: str = "anonymous"):
+    """Returns user settings from database"""
+    settings = get_user_settings(user_id=user_id)
+    return settings if settings else {}
+
+@app.post("/settings")
+@limiter.limit("10/minute")
+async def save_settings(request: Request, user_id: str = Form(default="anonymous"), contract_demand: float = Form(default=0), factory_name: str = Form(default=""), industry_type: str = Form(default=""), location: str = Form(default="")):
+    """Saves user settings to database"""
+    result = save_user_settings(
+        user_id=user_id,
+        contract_demand=contract_demand,
+        factory_name=factory_name,
+        industry_type=industry_type,
+        location=location
+    )
+    return {"success": result}
